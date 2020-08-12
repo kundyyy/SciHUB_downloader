@@ -68,54 +68,61 @@ def main(dwndir, csvpath, logpath, apipath):
 
     # Download files from the CSV list
     # ================================
-    max_attempts = 10
-    checksum = True
-    product_ids = list(dwnfil['uuid'])
-    # product_example = "672e5131-c79d-4500-b825-9dabf40662e3"
-    print(f"Found {len(product_ids)} products in CSV list.\n")
-    logging.info(f"Found {len(product_ids)} products in CSV list.\n")
+    total_products = len(dwnfil.index)
+    print(f"Found {total_products} products in CSV list.\n")
+    logging.info(f"Found {total_products} products in CSV list.\n")
 
     # Main loop for download
     # ======================
-    for i, product_id in enumerate(product_ids):
-        if not dwnfil['downloaded'].get(i):
-            current_file = api.get_product_odata(product_id)
-            print(f"     Next file: {current_file['title']}")
-            print(f"     File uuid: {product_id}")
+    max_attempts = 10
+    checksum = True
+    for i, row in dwnfil.iterrows():
+        if not row['downloaded']:
+            
+            current_file = api.get_product_odata(row['uuid'])
+            product_id = current_file['title']
+
+            print(f"\nNext file: {product_id}")
             logging.info(f"     Next file: {current_file['title']}")
+            
+            print(f"     File uuid: {product_id}")
             logging.info(f"     File uuid: {product_id}")
-
-            # If product isn't online (it is in LTA), wait and check every 5 min
-            waiting = 0
-            while not current_file['Online']:
-                if waiting == 0:
-                    print("File is offline, waiting 5 min...")
-                    logging.info("File is offline, waiting 5 min...")
-                sleep(5*60)
-                waiting += 5
-                print(f"{waiting} min has passed, file still Offline..")
-                logging.info(f"{waiting} min has passed, file still Offline..")
-
-            # When file goes online proceed with download
-            for attempt_num in range(max_attempts):
-                try:
-                    api.download(product_id, dwndir, checksum)
-                    # Update CSV file
-                    dwnfil.at[i, 'downloaded'] = True
-                    dwnfil.to_csv(csvpath, index=False)
-                    logging.info("CSV file updated\n")
-                    break
-                except (KeyboardInterrupt, SystemExit):
-                    raise
-                except InvalidChecksumError as e:
-                    logging.info(f"Invalid checksum. The downloaded file for '{product_id}' is corrupted.")
-                    logging.error(e)
-                except Exception as e:
-                    logging.info(f"There was an error downloading {product_id}")
-                    logging.error(e)
+            
+            # Check if file is Online
+            if current_file['Online']:
+                
+                print("File is online. Proceed with download...")
+                logging.info("File is online. Proceed with download...")
+                
+                for attempt_num in range(max_attempts):
+                    try:
+                        api.download(product_id, dwndir, checksum)
+                        # Update CSV file
+                        dwnfil.at[i, 'downloaded'] = True
+                        dwnfil.to_csv(csvpath, index=False)
+                        print("CSV file updated\n")
+                        logging.info("CSV file updated\n")
+                        break
+                        
+                    except (KeyboardInterrupt, SystemExit):
+                        raise
+                        
+                    except InvalidChecksumError as e:
+                        print(f"Invalid checksum. The downloaded file for '{product_id}' is corrupted.")
+                        print(e)
+                        logging.info(f"Invalid checksum. The downloaded file for '{product_id}' is corrupted.")
+                        logging.error(e)
+                        
+                    except Exception as e:
+                        print(f"There was an error downloading {product_id}")
+                        print(e)
+                        logging.info(f"There was an error downloading {product_id}")
+                        logging.error(e)
             else:
-                logging.info(f"    ****  File {product_id} was not Online!\n")
+                print("This file was not Online... SKIPPING!\n")
+                logging.info("This file was not Online... SKIPPING!\n")
         else:
+            print(f"SKIP!  File {product_id} has already been downloaded.\n")
             logging.info(f"SKIP!  File {product_id} has already been downloaded.\n")
 
     # End message
@@ -127,15 +134,15 @@ def main(dwndir, csvpath, logpath, apipath):
 
 if __name__ == "__main__":
     # Download folder
-    dwn_pth = "R:\\Sentinel-1_SLC\\"
+    dwn_pth = "R:\\Sentinel-1_SLC_aitlas\\"
 
     # Path to CSV file with a list of products to be triggered
-    csv_pth = ".\\userfiles\\slc_list.csv"
+    csv_pth = ".\\userfiles\\SLC_all.csv"
 
     # Path to log file
-    log_pth = ".\\userfiles\\LOGFILE_lta.log"
+    log_pth = ".\\userfiles\\LOG_download.log"
 
     # Path to file with SciHub credentials
-    api_pth = ".\\userfiles\\apihub.txt"
+    api_pth = ".\\userfiles\\apihub1.txt"
 
     main(dwn_pth, csv_pth, log_pth, api_pth)

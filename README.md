@@ -1,3 +1,7 @@
+# ! NEW BRANCH - aitlas !
+Modified routines for download of products for NL and DK for AiTLAS project.
+
+````
 # SciHUB_downloader
 A collection of python routines for downloading Sentinel products from SciHub.
 

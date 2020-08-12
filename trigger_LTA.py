@@ -67,7 +67,8 @@ def main(csvpath, logpath, apipath):
 
     # Trigger LTA retrieval
     # ======================
-    product_ids = list(dwnfil['uuid'])
+    dwnfil2 = dwnfil.iloc[(seq-1)::9, :]
+    product_ids = list(dwnfil2['uuid'])
 
     f_skip = 0
     f_trig = 0
@@ -118,12 +119,14 @@ def main(csvpath, logpath, apipath):
 
 if __name__ == "__main__":
     # Path to CSV file with a list of products to be triggered
-    csv_pth = ".\\userfiles\\slc_list.csv"
+    csv_pth = ".\\userfiles\\SLC_all.csv"
 
     # Path to log file
-    log_pth = ".\\userfiles\\LOGFILE_trigger.log"
+    log_pth = ".\\userfiles\\LOG_trigg_0.log"
 
     # Path to file with SciHub credentials
     api_pth = ".\\userfiles\\apihub.txt"
 
     main(csv_pth, log_pth, api_pth)
+
+    seq = 1  # from 1 to 9 for 9 different sequences
