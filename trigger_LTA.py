@@ -26,7 +26,7 @@ from sentinelsat import SentinelAPI, SentinelAPILTAError
 from time import sleep
 
 
-def main(csvpath, logpath, apipath):
+def main(csvpath, logpath, apipath, seq):
     # Configure file for logging
     # ===========================
     logging.basicConfig(filename=logpath,
@@ -51,7 +51,7 @@ def main(csvpath, logpath, apipath):
     # Connect to API using <username> and <password>
     # ==============================================
     print("Connecting to SciHub API...")
-    api = SentinelAPI(usrnam, psswrd, "https://scihub.copernicus.eu/dhus")
+    api = SentinelAPI(usrnam, psswrd, "https://scihub.copernicus.eu/apihub/")
 
     # Read CSV file
     # ==============
@@ -67,13 +67,14 @@ def main(csvpath, logpath, apipath):
 
     # Trigger LTA retrieval
     # ======================
-    dwnfil2 = dwnfil.iloc[(seq-1)::9, :]
+    dwnfil2 = dwnfil.iloc[(seq[0]-1)::seq[1], :]
     product_ids = list(dwnfil2['uuid'])
 
     f_skip = 0
     f_trig = 0
     for i, product_id in enumerate(product_ids):
         current_file = api.get_product_odata(product_id)
+        logging.info(f"Product {i + 1}/{len(product_ids)}: {current_file['title']}")
         logging.info(f"     Next file: {current_file['title']}")
         logging.info(f"     File uuid: {product_id}")
         print(f"Product {i+1}/{len(product_ids)}: {current_file['title']}")
@@ -87,8 +88,8 @@ def main(csvpath, logpath, apipath):
                     raise
                 except SentinelAPILTAError as e:
                     # Retry if user quota exceeded, else log error and go to next file
-                    if e.msg == "Requests for retrieval from LTA exceed user quota":
-                        logging.info("Waiting 31 min before retrying")
+                    if e.msg == "     Requests for retrieval from LTA exceed user quota":
+                        logging.info("     Waiting 31 min before retrying")
                         sleep(31 * 60)
                         try:
                             api.download(product_id)
@@ -96,23 +97,26 @@ def main(csvpath, logpath, apipath):
                         except (KeyboardInterrupt, SystemExit):
                             raise
                         except SentinelAPILTAError:
-                            logging.info(f"There was an error retrieving {product_id} from the LTA")
+                            logging.info(f"     There was an error retrieving {product_id} from the LTA")
                     else:
-                        logging.info(f"There was an error retrieving {product_id} from the LTA")
+                        logging.info(f"     There was an error retrieving {product_id} from the LTA")
                 # Wait 31 min after a successful trigger
-                logging.info("Waiting 31 min before triggering next file\n")
+                logging.info("     Waiting 31 min before triggering next file\n")
                 sleep(31*60)
             else:
                 f_skip += 1
-                print("File already online")
-                logging.info("File already online")
+                print("     File already online\n")
+                logging.info("     File already online\n")
         else:
-            logging.info("File already downloaded")
+            print("     File already downloaded\n")
+            logging.info("     File already downloaded\n")
 
     # End message
     # ============
     print("---------  Session finished  ---------")
     logging.info("   FINISHED!")
+
+    print(f"{f_trig} files retrieved, {f_skip} files skipped")
     logging.info(f"{f_trig} files retrieved, {f_skip} files skipped")
     logging.shutdown()
 
@@ -127,6 +131,8 @@ if __name__ == "__main__":
     # Path to file with SciHub credentials
     api_pth = ".\\userfiles\\apihub.txt"
 
-    main(csv_pth, log_pth, api_pth)
+    # For splitting between multiple accounts
+    sequence = (1, 9)   # tuple = (seq. nr, total sequences)
 
-    seq = 1  # from 1 to 9 for 9 different sequences
+    main(csv_pth, log_pth, api_pth, sequence)
+

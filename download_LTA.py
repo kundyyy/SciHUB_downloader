@@ -22,7 +22,6 @@ import sys
 
 from os.path import basename
 from datetime import datetime
-from time import sleep
 from sentinelsat import SentinelAPI, InvalidChecksumError
 
 
@@ -54,7 +53,7 @@ def main(dwndir, csvpath, logpath, apipath):
     # Connect to API using <username> and <password>
     # ==============================================
     print("Connecting to SciHub API...")
-    api = SentinelAPI(usrnam, psswrd, "https://scihub.copernicus.eu/dhus")
+    api = SentinelAPI(usrnam, psswrd, "https://scihub.copernicus.eu/apihub/")
 
     # Read CSV file
     # =============
@@ -78,52 +77,51 @@ def main(dwndir, csvpath, logpath, apipath):
     checksum = True
     for i, row in dwnfil.iterrows():
         if not row['downloaded']:
-            
-            current_file = api.get_product_odata(row['uuid'])
-            product_id = current_file['title']
 
-            print(f"\nNext file: {product_id}")
-            logging.info(f"     Next file: {current_file['title']}")
-            
-            print(f"     File uuid: {product_id}")
-            logging.info(f"     File uuid: {product_id}")
-            
+            print(f"\nNext file: {row['title']}")
+            logging.info(f"Next file: {row['title']}")
+
+            print(f"     File uuid: {row['uuid']}")
+            logging.info(f"     File uuid: {row['uuid']}")
+
+            current_file = api.get_product_odata(row['uuid'])
+
             # Check if file is Online
             if current_file['Online']:
                 
-                print("File is online. Proceed with download...")
-                logging.info("File is online. Proceed with download...")
+                print("     File is online. Proceed with download...")
+                logging.info("     File is online. Proceed with download...")
                 
                 for attempt_num in range(max_attempts):
                     try:
-                        api.download(product_id, dwndir, checksum)
+                        api.download(current_file['id'], dwndir, checksum)
                         # Update CSV file
                         dwnfil.at[i, 'downloaded'] = True
                         dwnfil.to_csv(csvpath, index=False)
-                        print("CSV file updated\n")
-                        logging.info("CSV file updated\n")
+                        print("     CSV file updated\n")
+                        logging.info("     CSV file updated\n")
                         break
                         
                     except (KeyboardInterrupt, SystemExit):
                         raise
                         
                     except InvalidChecksumError as e:
-                        print(f"Invalid checksum. The downloaded file for '{product_id}' is corrupted.")
+                        print(f"     Invalid checksum. The downloaded file for '{row['title']}' is corrupted.\n")
                         print(e)
-                        logging.info(f"Invalid checksum. The downloaded file for '{product_id}' is corrupted.")
+                        logging.info(f"     Invalid checksum. The downloaded file for '{row['title']}' is corrupted.\n")
                         logging.error(e)
                         
                     except Exception as e:
-                        print(f"There was an error downloading {product_id}")
+                        print(f"     There was an error downloading {row['title']}\n")
                         print(e)
-                        logging.info(f"There was an error downloading {product_id}")
+                        logging.info(f"     There was an error downloading {row['title']}\n")
                         logging.error(e)
             else:
-                print("This file was not Online... SKIPPING!\n")
-                logging.info("This file was not Online... SKIPPING!\n")
+                print("     This file was not Online... SKIPPING!\n")
+                logging.info("     This file was not Online... SKIPPING!\n")
         else:
-            print(f"SKIP!  File {product_id} has already been downloaded.\n")
-            logging.info(f"SKIP!  File {product_id} has already been downloaded.\n")
+            print(f"     SKIP!  File {row['title']} has already been downloaded.\n")
+            logging.info(f"     SKIP!  File {row['title']} has already been downloaded.\n")
 
     # End message
     # ============

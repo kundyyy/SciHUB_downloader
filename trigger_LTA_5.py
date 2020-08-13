@@ -51,7 +51,7 @@ def main(csvpath, logpath, apipath, seq):
     # Connect to API using <username> and <password>
     # ==============================================
     print("Connecting to SciHub API...")
-    api = SentinelAPI(usrnam, psswrd, "https://scihub.copernicus.eu/dhus")
+    api = SentinelAPI(usrnam, psswrd, "https://scihub.copernicus.eu/apihub/")
 
     # Read CSV file
     # ==============

@@ -122,11 +122,11 @@ if __name__ == "__main__":
     csv_pth = ".\\userfiles\\SLC_all.csv"
 
     # Path to log file
-    log_pth = ".\\userfiles\\LOG_trigg_3.log"
+    log_pth = ".\\userfiles\\LOG_trigg_6.log"
 
     # Path to file with SciHub credentials
-    api_pth = ".\\userfiles\\apihub3.txt"
+    api_pth = ".\\userfiles\\apihub6.txt"
 
-    sequence = 3  # from 1 to 9 for 9 different sequences
+    sequence = 6  # from 1 to 9 for 9 different sequences
 
     main(csv_pth, log_pth, api_pth, sequence)
